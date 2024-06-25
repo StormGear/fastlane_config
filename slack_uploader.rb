@@ -98,7 +98,7 @@ class SlackUploader
   end
 end
 
-access_token = "xoxb-7315423056981-7341122988320-XCqNfJJWKtoscXCgc67Ap5gy"
+access_token = "your_slack_app access token"
 
 # Initialize SlackUploader
 uploader = SlackUploader.new(access_token)
