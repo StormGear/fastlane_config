@@ -1,0 +1,190 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+
+  before_all do
+    ENV["SLACK_URL"] = "your slack webhooks URL"
+    ENV["FIREBASE_SERVICE_ACCOUNT_JSON"] = "path/to/service-account.json"
+    ENV["FIREBASE_APP_ID"] = "your firebase app id"
+    ENV["FIREBASE_CLI_TOKEN"] = "your cli token"
+  end
+
+  desc "Increment the build number in pubspec.yaml"
+  lane :increase_build_number do
+    begin
+    # script.rb is a ruby script that increments the build number in pubspec.yaml
+    system("ruby ../script.rb")
+    slack(
+    message: "Increment the build number in pubspec.yaml successful!" ,
+    success: true,
+    channel: "#channel_name",)
+    rescue => exception
+    slack(
+      message: "Increment the build number in pubspec.yaml failed!",
+      success: false,
+      payload: {"exception" => exception, "stacktrace" => exception.backtrace},
+      pretext: exception.to_s,
+    )
+    end
+  end
+
+  desc "Increment version code in build.gradle"
+  lane :increment_vc do
+    begin
+  increment_version_code(
+       gradle_file_path: "./app/build.gradle",
+       )
+  slack(
+        message: "Increment version code in build.gradle successful!" ,
+        success: true,
+        channel: "#channel_name",)
+    rescue => exception
+    slack(
+          message: "Increment version code in build.gradle failed!",
+          success: false,
+          payload: {"exception" => exception, "stacktrace" => exception.backtrace},
+          pretext: exception.to_s,
+        )
+    end
+  end
+
+  desc "Deploy a new version to the Google Play Store"
+  lane :internal do 
+    begin
+    sh "flutter build appbundle"
+    upload_to_play_store(
+      track: 'internal', 
+      release_status: 'draft', 
+      aab: '../build/app/outputs/bundle/release/app-release.aab',
+      skip_upload_apk: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true,
+      skip_upload_metadata: true,
+      skip_upload_changelogs: true,
+      skip_upload_aab: false,
+      )
+      slack(
+        message: "Deploy a new version to the Google Play Store successful!" ,
+        success: true,
+        channel: "#channel_name",)
+    rescue => exception
+    slack(
+      message: "Deploy a new version to the Google Play Store failed!",
+      success: false,
+      payload: {"exception" => exception, "stacktrace" => exception.backtrace},
+      pretext: exception.to_s,
+        )
+    end    
+  end
+
+  # build release apk
+  desc "Build release APK"
+  lane :build_apk do
+    sh "pwd"
+    sh "flutter build apk --release"
+  end
+  
+
+  desc "Upload the APK to Slack channel"
+  lane :upload_to_slack do |options|
+  begin
+  file_path = get_apk_path
+  sh "echo Uploading " + file_path + " to Slack"
+  # Get the version name and code
+  version_info = get_flutter_version_info
+  version_name = version_info[:version_name]
+  version_code = version_info[:version_code]
+  # Upload the APK to Slack
+  system("ruby ../slack_uploader.rb")
+
+  # Upload to Slack
+  slack(
+    message: "New APK build available!",
+    channel: "#myclean-app", # Replace with your channel name
+    slack_url: ENV["SLACK_URL"],
+    payload: {
+      "Version Name" => version_name,
+      "Version Code" => version_code,
+      "Built by" => "Fastlane"
+    },
+    default_payloads: [:git_branch, :last_git_commit_message],
+    success: true
+  )
+  rescue => exception
+    slack(
+          message: "Upload the APK to Slack failed!",
+          success: false,
+          payload: {"exception" => exception, "stacktrace" => exception.backtrace},
+          pretext: exception.to_s,
+        )
+   end
+  end
+
+desc "Upload AAB to Firebase App Distribution"
+lane :upload_to_firebase do
+  begin
+  # Upload to Firebase App Distribution
+  firebase_app_distribution(
+    app: ENV["FIREBASE_APP_ID"],
+    groups: "alias of testers group",
+    release_notes: "New beta version",
+    firebase_cli_token: ENV["FIREBASE_CLI_TOKEN"],
+    service_credentials_file: ENV["FIREBASE_SERVICE_ACCOUNT_JSON"],
+    android_artifact_type: "AAB",
+    android_artifact_path: "../build/app/outputs/bundle/release/app-release.aab",
+    debug: true
+  )
+  rescue => exception
+  slack(
+          message: "Upload AAB to Firebase App Distribution failed!",
+          success: false,
+          payload: {"exception" => exception, "stacktrace" => exception.backtrace},
+          pretext: exception.to_s,
+        )
+   end
+end
+  
+  # Helper method to get version name and code
+  def get_flutter_version_info
+    pubspec = File.read("../../pubspec.yaml")
+    version_line = pubspec.match(/version:\s*([\d.]+)\+([\d]+)/)
+    
+    if version_line
+      {
+        version_name: version_line[1],
+        version_code: version_line[2]
+      }
+    else
+      UI.user_error!("Could not find version information in pubspec.yaml")
+    end
+  end
+
+  def get_apk_path
+    # Define the base path where Flutter builds the APK
+    base_path = "../../build/app/outputs/flutter-apk"
+    
+    # Look for the APK file
+    apk_file = Dir["#{base_path}/*-release.apk"].first
+    
+    if apk_file.nil?
+      UI.user_error!("Could not find APK file in #{base_path}")
+    end
+    
+    return apk_file
+  end
+end
