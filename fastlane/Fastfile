@@ -115,7 +115,7 @@ platform :android do
   # Upload to Slack
   slack(
     message: "New APK build available!",
-    channel: "#myclean-app", # Replace with your channel name
+    channel: "#channel_name", # Replace with your channel name
     slack_url: ENV["SLACK_URL"],
     payload: {
       "Version Name" => version_name,
