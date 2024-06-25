@@ -2,7 +2,7 @@
 
 <br/>
 
-<div style="display: flex; justify-content: space-between; flex-direction: row">
+<div style="display: flex; justify-content: space-between; flex-direction: row; width: 100%">
   <img src="./assets/fastlane.png" alt="Fastlane" style="width: 50%;">
   <img src="./assets/slack.webp" alt="Slack" style="width: 50%;">
 </div>
