@@ -3,8 +3,8 @@
 <br/>
 
 <div style="display: flex; justify-content: space-between; flex-direction: row">
-  <img src="./assets/fastlane.png" alt="Fastlane" style="width: 50%;">
-  <img src="./assets/slack.webp" alt="Slack" style="width: 48%;">
+  <img src="./assets/fastlane.png" alt="Fastlane" style="width: 50%; height: 25%;">
+  <img src="./assets/slack.webp" alt="Slack" style="width: 48%;height: 25%;">
 </div>
 
 <br/>
