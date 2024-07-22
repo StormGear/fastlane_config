@@ -54,6 +54,10 @@ Upload apk to Slack Channel. It runs a script written in Ruby that utilizes the 
 >> **What it does** <br>
 Releases appbundles to Firebase App Distribution.
 
+> **Lane name** : upload_ipa
+>> **What it does** <br>
+Upload ios builds to app store connect. Follow this link to [learn more.](https://docs.fastlane.tools/actions/pilot/)
+
 # Custom Ruby Scripts
 <code> slack_uploader.rb </code>  - Uploads apk to Slack. <br/>
 <code> increase_version.rb </code>  - Increase build number by 1 in pubspec.yaml.

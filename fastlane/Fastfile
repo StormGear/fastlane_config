@@ -158,6 +158,7 @@ lane :upload_to_firebase do
         )
    end
 end
+
   
   # Helper method to get version name and code
   def get_flutter_version_info
@@ -186,5 +187,21 @@ end
     end
     
     return apk_file
+  end
+end
+
+# For IOS platform, you can use the following code:
+platform :ios do
+  desc "Upload ipa to App Store Connect"
+  lane :upload_ipa do
+    api_key = app_store_connect_api_key(
+      key_id: "****",
+      issuer_id: "***",
+      key_filepath: "Path/to/AuthKey_****.p8",
+      duration: 1200, # optional (maximum 1200)
+      in_house: false # optional but may be required if using match/sigh
+    )
+  
+    pilot(api_key: api_key, ipa: "../build/ios/ipa/myclean_app.ipa")
   end
 end
